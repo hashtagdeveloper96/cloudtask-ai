@@ -35,3 +35,4 @@ class Task(Base):
         default=datetime.utcnow,
         nullable=False,
     )
+
