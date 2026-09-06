@@ -8,11 +8,13 @@ from app.schemas.task import TaskCreate, TaskUpdate
 def create_task(
     db: Session,
     task_data: TaskCreate,
+    user_id: int,
 ) -> Task:
     task = Task(
         title=task_data.title,
         description=task_data.description,
         status=task_data.status,
+        user_id= user_id,
     )
 
     db.add(task)
@@ -24,19 +26,29 @@ def create_task(
 
 def get_tasks(
     db: Session,
+    user_id: int,
 ) -> list[Task]:
     result = db.execute(
-        select(Task).order_by(Task.id)
+        select(Task)
+        .where(Task.user_id == user_id)
+        .order_by(Task.id)
     )
 
     return list(result.scalars().all())
-
-
 def get_task(
     db: Session,
     task_id: int,
+    user_id: int,
 ) -> Task | None:
-    return db.get(Task, task_id)
+
+    result = db.execute(
+        select(Task).where(
+            Task.id == task_id,
+            Task.user_id == user_id,
+        )
+    )
+
+    return result.scalar_one_or_none()
 
 
 def update_task(

@@ -1,12 +1,13 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, String, Text
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import DateTime, ForeignKey, String, Text
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database.connection import Base
 
 
 class Task(Base):
+
     __tablename__ = "tasks"
 
     id: Mapped[int] = mapped_column(
@@ -34,5 +35,16 @@ class Task(Base):
         DateTime,
         default=datetime.utcnow,
         nullable=False,
+    )
+
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id"),
+        nullable=False,
+        index=True,
+    )
+
+    user = relationship(
+        "User",
+        back_populates="tasks",
     )
 

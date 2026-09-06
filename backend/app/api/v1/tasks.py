@@ -1,12 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.api.v1.auth_dependencies import get_current_user
 from app.database.connection import get_db
-from app.schemas.task import (
-    TaskCreate,
-    TaskResponse,
-    TaskUpdate,
-)
+from app.models.user import User
+from app.schemas.task import TaskCreate, TaskResponse, TaskUpdate
 from app.services.task_service import (
     create_task,
     delete_task,
@@ -15,11 +13,7 @@ from app.services.task_service import (
     update_task,
 )
 
-
-router = APIRouter(
-    prefix="/tasks",
-    tags=["Tasks"],
-)
+router = APIRouter(prefix="/tasks", tags=["Tasks"])
 
 
 @router.post(
@@ -30,18 +24,27 @@ router = APIRouter(
 def create_task_endpoint(
     task_data: TaskCreate,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    return create_task(db, task_data)
+    return create_task(
+        db,
+        task_data,
+        current_user.id,
+    )
 
 
 @router.get(
     "",
     response_model=list[TaskResponse],
 )
-def list_tasks(
+def get_tasks_endpoint(
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    return get_tasks(db)
+    return get_tasks(
+        db,
+        current_user.id,
+    )
 
 
 @router.get(
@@ -51,8 +54,13 @@ def list_tasks(
 def get_task_endpoint(
     task_id: int,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    task = get_task(db, task_id)
+    task = get_task(
+        db,
+        task_id,
+        current_user.id,
+    )
 
     if task is None:
         raise HTTPException(
@@ -71,8 +79,14 @@ def update_task_endpoint(
     task_id: int,
     task_data: TaskUpdate,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    task = get_task(db, task_id)
+    task = update_task(
+        db,
+        task_id,
+        task_data,
+        current_user.id,
+    )
 
     if task is None:
         raise HTTPException(
@@ -80,11 +94,7 @@ def update_task_endpoint(
             detail="Task not found",
         )
 
-    return update_task(
-        db,
-        task,
-        task_data,
-    )
+    return task
 
 
 @router.delete(
@@ -94,13 +104,18 @@ def update_task_endpoint(
 def delete_task_endpoint(
     task_id: int,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    task = get_task(db, task_id)
+    deleted = delete_task(
+        db,
+        task_id,
+        current_user.id,
+    )
 
-    if task is None:
+    if not deleted:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Task not found",
         )
 
-    delete_task(db, task)
+    return None
