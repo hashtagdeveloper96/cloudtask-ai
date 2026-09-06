@@ -13,7 +13,11 @@ from app.services.task_service import (
     update_task,
 )
 
-router = APIRouter(prefix="/tasks", tags=["Tasks"])
+
+router = APIRouter(
+    prefix="/tasks",
+    tags=["Tasks"],
+)
 
 
 @router.post(
@@ -27,9 +31,9 @@ def create_task_endpoint(
     current_user: User = Depends(get_current_user),
 ):
     return create_task(
-        db,
-        task_data,
-        current_user.id,
+        db=db,
+        task_data=task_data,
+        user_id=current_user.id,
     )
 
 
@@ -42,8 +46,8 @@ def get_tasks_endpoint(
     current_user: User = Depends(get_current_user),
 ):
     return get_tasks(
-        db,
-        current_user.id,
+        db=db,
+        user_id=current_user.id,
     )
 
 
@@ -57,9 +61,9 @@ def get_task_endpoint(
     current_user: User = Depends(get_current_user),
 ):
     task = get_task(
-        db,
-        task_id,
-        current_user.id,
+        db=db,
+        task_id=task_id,
+        user_id=current_user.id,
     )
 
     if task is None:
@@ -82,10 +86,10 @@ def update_task_endpoint(
     current_user: User = Depends(get_current_user),
 ):
     task = update_task(
-        db,
-        task_id,
-        task_data,
-        current_user.id,
+        db=db,
+        task_id=task_id,
+        task_data=task_data,
+        user_id=current_user.id,
     )
 
     if task is None:
@@ -107,9 +111,9 @@ def delete_task_endpoint(
     current_user: User = Depends(get_current_user),
 ):
     deleted = delete_task(
-        db,
-        task_id,
-        current_user.id,
+        db=db,
+        task_id=task_id,
+        user_id=current_user.id,
     )
 
     if not deleted:

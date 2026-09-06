@@ -1,3 +1,5 @@
+from uuid import uuid4
+
 from fastapi.testclient import TestClient
 
 from app.main import app
@@ -7,12 +9,16 @@ client = TestClient(app)
 
 
 def test_register_user():
+    unique_id = uuid4().hex[:8]
+
+    email = f"test_{unique_id}@example.com"
+    username = f"testuser_{unique_id}"
 
     response = client.post(
         "/api/v1/auth/register",
         json={
-            "email": "test@example.com",
-            "username": "testuser",
+            "email": email,
+            "username": username,
             "password": "TestPassword123!",
         },
     )
@@ -21,24 +27,40 @@ def test_register_user():
 
     data = response.json()
 
-    assert data["email"] == "test@example.com"
-    assert data["username"] == "testuser"
+    assert data["email"] == email
+    assert data["username"] == username
     assert "hashed_password" not in data
 
 
 def test_login_user():
+    unique_id = uuid4().hex[:8]
 
-    response = client.post(
-        "/api/v1/auth/login",
-        data={
-            "username": "test@example.com",
-            "password": "TestPassword123!",
+    email = f"login_{unique_id}@example.com"
+    username = f"loginuser_{unique_id}"
+    password = "TestPassword123!"
+
+    register_response = client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": email,
+            "username": username,
+            "password": password,
         },
     )
 
-    assert response.status_code == 200
+    assert register_response.status_code == 201
 
-    data = response.json()
+    login_response = client.post(
+        "/api/v1/auth/login",
+        data={
+            "username": email,
+            "password": password,
+        },
+    )
+
+    assert login_response.status_code == 200
+
+    data = login_response.json()
 
     assert "access_token" in data
     assert data["token_type"] == "bearer"

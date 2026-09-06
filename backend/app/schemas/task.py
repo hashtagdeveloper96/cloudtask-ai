@@ -37,6 +37,7 @@ class TaskResponse(BaseModel):
     title: str
     description: str | None
     status: str
+    user_id: int
     created_at: datetime
 
     model_config = ConfigDict(

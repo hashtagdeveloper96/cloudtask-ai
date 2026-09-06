@@ -14,7 +14,7 @@ def create_task(
         title=task_data.title,
         description=task_data.description,
         status=task_data.status,
-        user_id= user_id,
+        user_id=user_id,
     )
 
     db.add(task)
@@ -35,12 +35,13 @@ def get_tasks(
     )
 
     return list(result.scalars().all())
+
+
 def get_task(
     db: Session,
     task_id: int,
     user_id: int,
 ) -> Task | None:
-
     result = db.execute(
         select(Task).where(
             Task.id == task_id,
@@ -53,12 +54,21 @@ def get_task(
 
 def update_task(
     db: Session,
-    task: Task,
+    task_id: int,
     task_data: TaskUpdate,
-) -> Task:
+    user_id: int,
+) -> Task | None:
+    task = get_task(
+        db=db,
+        task_id=task_id,
+        user_id=user_id,
+    )
+
+    if task is None:
+        return None
 
     update_data = task_data.model_dump(
-        exclude_unset=True
+        exclude_unset=True,
     )
 
     for field, value in update_data.items():
@@ -72,7 +82,19 @@ def update_task(
 
 def delete_task(
     db: Session,
-    task: Task,
-) -> None:
+    task_id: int,
+    user_id: int,
+) -> bool:
+    task = get_task(
+        db=db,
+        task_id=task_id,
+        user_id=user_id,
+    )
+
+    if task is None:
+        return False
+
     db.delete(task)
     db.commit()
+
+    return True
