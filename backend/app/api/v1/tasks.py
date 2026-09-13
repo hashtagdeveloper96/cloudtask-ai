@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.api.v1.auth_dependencies import get_current_user
@@ -42,12 +42,45 @@ def create_task_endpoint(
     response_model=list[TaskResponse],
 )
 def get_tasks_endpoint(
+    skip: int = Query(
+        default=0,
+        ge=0,
+    ),
+    limit: int = Query(
+        default=20,
+        ge=1,
+        le=100,
+    ),
+    task_status: str | None = Query(
+        default=None,
+        alias="status",
+    ),
+    search: str | None = Query(
+        default=None,
+        max_length=100,
+    ),
+    sort_by: str = Query(
+        default="created_at",
+        pattern="^(created_at|title)$",
+    ),
+    sort_order: str = Query(
+        default="desc",
+        pattern="^(asc|desc)$",
+    ),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(
+        get_current_user
+    ),
 ):
     return get_tasks(
         db=db,
         user_id=current_user.id,
+        skip=skip,
+        limit=limit,
+        task_status=task_status,
+        search=search,
+        sort_by=sort_by,
+        sort_order=sort_order,
     )
 
 

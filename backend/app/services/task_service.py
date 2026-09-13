@@ -27,14 +27,51 @@ def create_task(
 def get_tasks(
     db: Session,
     user_id: int,
+    skip: int = 0,
+    limit: int = 20,
+    task_status: str | None = None,
+    search: str | None = None,
+    sort_by: str = "created_at",
+    sort_order: str = "desc",
 ) -> list[Task]:
-    result = db.execute(
-        select(Task)
-        .where(Task.user_id == user_id)
-        .order_by(Task.id)
+    query = select(Task).where(
+        Task.user_id == user_id
     )
 
-    return list(result.scalars().all())
+    if task_status:
+        query = query.where(
+            Task.status == task_status
+        )
+
+    if search:
+        query = query.where(
+            Task.title.ilike(
+                f"%{search}%"
+            )
+        )
+
+    sort_column = (
+        Task.created_at
+        if sort_by == "created_at"
+        else Task.title
+    )
+
+    if sort_order == "asc":
+        query = query.order_by(
+            sort_column.asc()
+        )
+    else:
+        query = query.order_by(
+            sort_column.desc()
+        )
+
+    query = query.offset(skip).limit(limit)
+
+    result = db.execute(query)
+
+    return list(
+        result.scalars().all()
+    )
 
 
 def get_task(
