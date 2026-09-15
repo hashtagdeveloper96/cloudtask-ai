@@ -4,6 +4,8 @@ from app.api.v1.auth import router as auth_router
 from app.api.v1.debug import router as debug_router
 from app.api.v1.health import router as health_router
 from app.api.v1.tasks import router as tasks_router
+from app.api.v1.metrics import router as metrics_router
+from app.core.metrics import PrometheusMiddleware
 from app.api.v1.readiness import router as readiness_router
 from app.core.config import get_settings
 from app.core.exceptions import global_exception_handler
@@ -42,6 +44,10 @@ app = FastAPI(
 
 app.add_middleware(
     RequestLoggingMiddleware
+)
+
+app.add_middleware(
+    PrometheusMiddleware
 )
 
 
@@ -84,6 +90,7 @@ app.include_router(
     prefix="/api/v1",
 )
 
+app.include_router(metrics_router)
 
 # ---------------------------------------------------------
 # Root endpoint

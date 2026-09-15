@@ -1,54 +1,56 @@
 services:
+
   db:
     image: postgres:16
     container_name: cloudtask-postgres
-
     environment:
       POSTGRES_USER: cloudtask
       POSTGRES_PASSWORD: cloudtask
       POSTGRES_DB: cloudtask
-
     ports:
       - "5432:5432"
-
     volumes:
       - postgres_data:/var/lib/postgresql/data
-
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U cloudtask -d cloudtask"]
       interval: 5s
       timeout: 5s
       retries: 5
 
-
   backend:
     build:
       context: .
-
+      dockerfile: Dockerfile
     container_name: cloudtask-backend
-
+    command: >
+      sh -c "python -m alembic upgrade head &&
+             uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    environment:
+      DATABASE_URL: postgresql+psycopg://cloudtask:cloudtask@db:5432/cloudtask
+      SECRET_KEY: development-secret-key-change-me
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: "30"
+      APP_NAME: CloudTask AI Development API
+      APP_VERSION: 0.1.0
+      ENVIRONMENT: development
+      DEBUG: "true"
     ports:
       - "8000:8000"
-
-    environment:
-      APP_NAME: "CloudTask AI Development API"
-      APP_VERSION: "0.1.0"
-      ENVIRONMENT: "development"
-      DEBUG: "true"
-      DATABASE_URL: "postgresql+psycopg://cloudtask:cloudtask@db:5432/cloudtask"
-      SECRET_KEY: "development-secret-key-change-me"
-      ALGORITHM: "HS256"
-      ACCESS_TOKEN_EXPIRE_MINUTES: "30"
-
     depends_on:
       db:
         condition: service_healthy
 
-    command: >
-      sh -c "
-      python -m alembic upgrade head &&
-      uvicorn app.main:app --host 0.0.0.0 --port 8000
-      "
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: cloudtask-prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    depends_on:
+      - backend
 
 volumes:
   postgres_data:
